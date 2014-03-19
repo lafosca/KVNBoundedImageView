@@ -180,14 +180,6 @@ static CGFloat const FeaturePaddingDefault = 5.0;
         if ([blockOp isCancelled]) {
             return;
         }
-    
-        if (CGRectIsEmpty(boundingRect)) {
-            [[NSOperationQueue mainQueue] addOperationWithBlock:^() {
-                if (completion) {
-                    completion(image);
-                }
-            }];
-        }
         
         CGRect croppingRect = CGRectZero;
         CGFloat aspectRatio = AspectRatio(self.bounds.size);
@@ -315,6 +307,12 @@ static CGFloat const FeaturePaddingDefault = 5.0;
 
 #pragma mark - Setting Image
 - (void)setImageFromURL:(NSURL *)url placeholder:(UIImage *)placeholder {
+
+    if (image == nil) {
+        [super setImage:nil];
+        return;
+    }
+
     [self setPlaceholderImage:placeholder];
     
     [self.asyncQueue cancelAllOperations];
@@ -353,6 +351,12 @@ static CGFloat const FeaturePaddingDefault = 5.0;
 }
 
 - (void)setImage:(UIImage *)image cacheName:(NSString *)cacheName {
+
+    if (image == nil) {
+        [super setImage:nil];
+        return;
+    }
+
     _originalImage = image;
     [self halt];
     self.imageURLRequest = nil;

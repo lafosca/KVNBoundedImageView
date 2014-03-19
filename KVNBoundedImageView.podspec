@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = "KVNBoundedImageView"
-  s.version          = "1.0.0"
+  s.version          = "1.0.1-lafosca"
   s.summary          = "KVNBoundedImageView attempts automatically to keep faces and other detectable features visible and centered in a UIImageView"
   s.homepage         = "https://github.com/donnellyk/KVNBoundedImageView"
   s.license          = 'MIT'
