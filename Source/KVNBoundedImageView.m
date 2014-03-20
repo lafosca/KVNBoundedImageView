@@ -111,9 +111,7 @@ static CGFloat const FeaturePaddingDefault = 5.0;
 - (CGRect)boundingRectangleForImage:(UIImage *)image {
     CGRect boundingRectangle = CGRectNull;
     
-    if (!self.features) {
-        self.features = [self findFeaturesFromImage:image];
-    }
+    self.features = [self findFeaturesFromImage:image];
     
     BOOL useAll = [self.boundingBoxScheme isEqualToString:BoundingBoxSchemeAll];
     for (NSValue *feature in self.features) {
@@ -181,6 +179,10 @@ static CGFloat const FeaturePaddingDefault = 5.0;
             return;
         }
         
+        if (CGRectIsEmpty(boundingRect)) {
+            boundingRect = CGRectMake(0, image.size.height/2, 0, 0);
+        }
+        
         CGRect croppingRect = CGRectZero;
         CGFloat aspectRatio = AspectRatio(self.bounds.size);
         if (aspectRatio > 1.0) { // Scale by width
@@ -201,7 +203,7 @@ static CGFloat const FeaturePaddingDefault = 5.0;
         if ([blockOp isCancelled]) {
             return;
         }
-    
+        
         CGImageRef imageRef = CGImageCreateWithImageInRect(image.CGImage, croppingRect);
         UIImage *croppedImage = [[UIImage alloc] initWithCGImage:imageRef];
         CGImageRelease(imageRef);
@@ -213,14 +215,14 @@ static CGFloat const FeaturePaddingDefault = 5.0;
         if ([blockOp isCancelled]) {
             return;
         }
-    
+        
         [[NSOperationQueue mainQueue] addOperationWithBlock:^() {
             if (completion) {
                 completion(croppedImage);
             }
         }];
     }];
-
+    
     [self.asyncQueue addOperation:blockOp];
 }
 
@@ -240,7 +242,7 @@ static CGFloat const FeaturePaddingDefault = 5.0;
 #pragma mark - Face Detection
 - (NSArray *)findFeaturesFromImage:(UIImage *)image {
     NSMutableArray *valueFeatures = [NSMutableArray array];
-
+    
     // Not reusing the detector because that seemed to cause unbounded memory growth. until the detector was released. This was a workaround for that. http://openradar.appspot.com/radar?id=6645353252126720
     CIDetector *detector = [CIDetector detectorOfType:CIDetectorTypeFace context:nil options:@{CIDetectorAccuracy: self.detectorAccuracy}];
     
@@ -307,12 +309,7 @@ static CGFloat const FeaturePaddingDefault = 5.0;
 
 #pragma mark - Setting Image
 - (void)setImageFromURL:(NSURL *)url placeholder:(UIImage *)placeholder {
-
-    if (image == nil) {
-        [super setImage:nil];
-        return;
-    }
-
+    
     [self setPlaceholderImage:placeholder];
     
     [self.asyncQueue cancelAllOperations];
@@ -329,7 +326,7 @@ static CGFloat const FeaturePaddingDefault = 5.0;
     __weak __typeof__(self)weakSelf = self;
     self.imageFetchOperation = [NSBlockOperation blockOperationWithBlock:^(){
         __strong __typeof__(weakSelf)strongSelf = weakSelf;
-
+        
         if (!strongSelf) {
             return;
         }
@@ -344,19 +341,18 @@ static CGFloat const FeaturePaddingDefault = 5.0;
         [connection scheduleInRunLoop:runLoop forMode:NSRunLoopCommonModes];
         [connection start];
         [runLoop run];
-        
     }];
     
     [self.asyncQueue addOperation:self.imageFetchOperation];
 }
 
 - (void)setImage:(UIImage *)image cacheName:(NSString *)cacheName {
-
+    
     if (image == nil) {
         [super setImage:nil];
         return;
     }
-
+    
     _originalImage = image;
     [self halt];
     self.imageURLRequest = nil;
@@ -365,10 +361,12 @@ static CGFloat const FeaturePaddingDefault = 5.0;
     if (!self.boundingEnabled) {
         [super setImage:image];
         return;
-    } else if ((cachedCroppedImage = [[KVNBoundedImageView sharedCroppedImageCache] objectForKey:[self cacheKeyWithName:cacheName]])) {
-        [super setImage:cachedCroppedImage];
-        return;
-    } else if (!self.image && self.placeholderImage) {
+    }
+    //    else if ((cachedCroppedImage = [[KVNBoundedImageView sharedCroppedImageCache] objectForKey:[self cacheKeyWithName:cacheName]])) {
+    //        [super setImage:cachedCroppedImage];
+    //        return;
+    //    }
+    else if (!self.image && self.placeholderImage) {
         [super setImage:self.placeholderImage];
     }
     
